@@ -1,0 +1,22 @@
+source: chibbss/fitness-chat-prompt-completion-dataset
+
+raw_dir: data/raw
+out_dir: data/final
+
+filters:
+  min_chars: 200
+  max_chars: 100000
+  min_alpha_ratio: 0.30
+  lang: en
+  lang_threshold: 0.80
+  max_repeated_line_ratio: 0.30
+
+dedup:
+  exact: true
+  fuzzy: false
+
+pii:
+  mask:
+    - email
+    - phone
+    - digits
