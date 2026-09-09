@@ -1,0 +1,31 @@
+# ====================================================================
+# CUSTOM LLM PROJECT GITIGNORE
+# ====================================================================
+
+# 1. Ignore Massive Data Files (Sourced text, cleaned files, databases)
+data/
+*.txt
+*.csv
+*.jsonl
+*.parquet
+
+# 2. Ignore Large Model Weights & Checkpoints (PyTorch output files)
+checkpoints/
+models/
+*.pt
+*.pth
+*.bin
+*.ckpt
+*.safetensors
+
+# 3. Ignore Python Environment and Local Virtual Systems
+venv/
+.venv/
+env/
+__pycache__/
+*.pyc
+
+# 4. Ignore Jupyter Notebook Configuration Cache and System Files
+.ipynb_checkpoints/
+.DS_Store
+Thumbs.db
