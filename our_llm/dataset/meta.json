@@ -1,0 +1,19 @@
+{
+  "source": "../data/final/fitness_final.jsonl",
+  "tokenizer_file": "../tokenizer/tokenizer.json",
+  "vocab_size": 8000,
+  "special_tokens": {
+    "<eos>": 0
+  },
+  "eos_id": 0,
+  "dtype": "uint16",
+  "block_size": 256,
+  "seed": 1337,
+  "val_ratio": 0.01,
+  "n_docs_total": 170,
+  "n_docs_train": 169,
+  "n_docs_val": 1,
+  "n_tokens_train": 21250,
+  "n_tokens_val": 165,
+  "created": "2026-09-16 10:49:38"
+}
