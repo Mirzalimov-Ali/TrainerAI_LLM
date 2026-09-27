@@ -50,10 +50,28 @@ class ModelConfig:
         return asdict(self)
 
 
+# def load_config(path):
+#     with open(path, "r", encoding="utf-8") as f:
+#         values = yaml.safe_load(f)
+
+#     config = ModelConfig(**values)
+#     config.check()
+#     return config
+
 def load_config(path):
     with open(path, "r", encoding="utf-8") as f:
         values = yaml.safe_load(f)
 
-    config = ModelConfig(**values)
+    model_values = {
+        "vocab_size": values["vocab_size"],
+        "block_size": values["block_size"],
+        "n_embd": values["n_embd"],
+        "n_layer": values["n_layer"],
+        "n_head": values["n_head"],
+        "dropout": values["dropout"],
+        "tie_weights": values["tie_weights"],
+    }
+
+    config = ModelConfig(**model_values)
     config.check()
     return config

@@ -4,7 +4,6 @@ from torch.nn import functional as F
 
 from src.transformer_block import TransformerBlock
 
-
 class OurLLM(nn.Module):
     def __init__(self, config):
         super().__init__()
@@ -26,11 +25,23 @@ class OurLLM(nn.Module):
         self.apply(self._init_weights)
 
     def _init_weights(self, module):
-        """Small random weights at the start, per the GPT-2 recipe."""
         if isinstance(module, (nn.Linear, nn.Embedding)):
             nn.init.normal_(module.weight, mean=0.0, std=0.02)
             if isinstance(module, nn.Linear) and module.bias is not None:
                 nn.init.zeros_(module.bias)
+
+    def configure_optimizers(self, weight_decay, lr, betas):
+        decay, no_decay = [], []
+        for param in self.parameters():
+            if not param.requires_grad:
+                continue
+            (decay if param.dim() >= 2 else no_decay).append(param)
+
+        groups = [
+            {"params": decay, "weight_decay": weight_decay},
+            {"params": no_decay, "weight_decay": 0.0},
+        ]
+        return torch.optim.AdamW(groups, lr=lr, betas=betas)
 
     def num_parameters(self):
         n = sum(p.numel() for p in self.parameters())
@@ -67,7 +78,7 @@ class OurLLM(nn.Module):
         for _ in range(max_new_tokens):
             idx_cond = idx[:, -self.config.block_size:]
             logits, _ = self(idx_cond)
-            next_logits = logits[:, -1, :] 
+            next_logits = logits[:, -1, :]  # only the last position matters
             next_token = torch.argmax(next_logits, dim=-1, keepdim=True)
             idx = torch.cat([idx, next_token], dim=1)
         return idx

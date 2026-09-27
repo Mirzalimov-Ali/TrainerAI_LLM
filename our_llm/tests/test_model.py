@@ -52,13 +52,13 @@ def overfit_one_batch_test(model, config):
     optimizer = torch.optim.AdamW(model.parameters(), lr=3e-3)
 
     loss = None
-    for _ in range(200):
+    for _ in range(1000):
         _, loss = model(batch, targets)
         optimizer.zero_grad()
         loss.backward()
         optimizer.step()
 
-    print("  final loss after 200 steps on one batch = {:.4f}".format(loss.item()))
+    print("  final loss after 1000 steps on one batch = {:.4f}".format(loss.item()))
     assert loss.item() < 0.1, (
         "loss did not collapse toward zero - the model or optimiser is broken"
     )

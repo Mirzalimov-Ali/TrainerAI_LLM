@@ -1,7 +1,114 @@
-source: chibbss/fitness-chat-prompt-completion-dataset
+# source: chibbss/fitness-chat-prompt-completion-dataset
 
+# raw_dir: data/raw
+# out_dir: data/final
+
+# filters:
+#   min_chars: 200
+#   max_chars: 100000
+#   min_alpha_ratio: 0.30
+#   lang: en
+#   lang_threshold: 0.80
+#   max_repeated_line_ratio: 0.30
+
+# dedup:
+#   exact: true
+#   fuzzy: false
+
+# pii:
+#   mask:
+#     - email
+#     - phone
+#     - digits
+
+
+
+
+
+
+# ============================================================
+# TrainerAI_LLM - data mixture configuration
+# ============================================================
 raw_dir: data/raw
+cleaned_dir: data/cleaned
+filtered_dir: data/filtered
 out_dir: data/final
+
+mixture:
+  fineweb:
+    weight: 0.60
+
+  fitness:
+    weight: 0.40
+    categories:
+      exercise_knowledge:
+        weight: 0.20
+        sources:
+          - A1
+          - A2
+          - A3
+          - B2
+
+      workout_programs:
+        weight: 0.40
+        sources:
+          - B1
+
+      synthetic_programs:
+        weight: 0.30
+        sources:
+          - synthetic
+
+      fitness_qa:
+        weight: 0.10
+        sources:
+          - B3
+
+sources:
+  A1:
+    type: github
+    repo: https://github.com/hasaneyldrm/exercises-dataset.git
+    category: exercise_knowledge
+
+  A2:
+    type: github
+    repo: https://github.com/ExerciseDB/exercisedb-api.git
+    category: exercise_knowledge
+
+  A3:
+    type: github
+    repo: https://github.com/longhaul-fitness/exercises.git
+    category: exercise_knowledge
+
+  B1:
+    type: huggingface
+    dataset: chibbss/fitness-chat-prompt-completion-dataset
+    split: train
+    category: workout_programs
+
+  B2:
+    type: huggingface
+    dataset: RepDB/exercise-dataset
+    split: train
+    category: exercise_knowledge
+
+  B3:
+    type: huggingface
+    dataset: hammamwahab/fitness-qa
+    split: train
+    category: fitness_qa
+
+  fineweb:
+    type: huggingface
+    dataset: HuggingFaceFW/fineweb
+    config: sample-10BT
+    split: train
+    category: general
+
+    # IMPORTANT:
+    # Do not download the entire FineWeb dataset.
+    # Streaming + max_documents keeps this project small.
+    max_documents: 5000
 
 filters:
   min_chars: 200
@@ -20,3 +127,9 @@ pii:
     - email
     - phone
     - digits
+
+synthetic:
+  # Synthetic programs are generated from the exercise knowledge
+  # already collected from A1/A2/A3/B2.
+  enabled: true
+  target_documents: 1000
