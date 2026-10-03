@@ -15,7 +15,7 @@ COPY checkpoints/ checkpoints/
 
 ENV PORT=8000
 
-ENV CHECKPOINT_PATH=checkpoints/model.pt
+ENV CHECKPOINT_PATH=checkpoints/best.pt
 EXPOSE 8000
 
 CMD ["sh", "-c", "uvicorn deployment.app:app --host 0.0.0.0 --port ${PORT}"]
