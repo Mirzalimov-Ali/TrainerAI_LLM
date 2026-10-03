@@ -1,0 +1,66 @@
+{
+  "parameters": {
+    "total": 10745856
+  },
+  "dataset": {
+    "train_tokens": 6277490,
+    "val_tokens": 60466,
+    "vocab_size": 8000
+  },
+  "loss": {
+    "train_sampled": 3.0427720955684783,
+    "val_exact": 3.303364466560089,
+    "train_val_gap": 0.2605923709916107
+  },
+  "perplexity": {
+    "val": 27.204012112493835,
+    "random_baseline": 8000.0,
+    "bigram_baseline": 181.67952472056302,
+    "bits_per_byte_val": null
+  },
+  "generation_samples": [
+    {
+      "prompt": "Artificial intelligence will change the world because",
+      "temperature": 0.2,
+      "text": "Artificial intelligence will change the world because of the world\u2019s most importantly to be a good idea.\nThe first time we have been working with the best part of our world, and we are not going to be able to take a lot of people who want to be able to",
+      "tokens_generated": 50,
+      "latency_ms": 241.55219999374822
+    },
+    {
+      "prompt": "Artificial intelligence will change the world because",
+      "temperature": 0.8,
+      "text": "Artificial intelligence will change the world because of course, and many of you will take a big chance to go. We can also be able to play this game as well as being an oldest actors in the game.\nOur goal is to find and what we have to have the",
+      "tokens_generated": 50,
+      "latency_ms": 168.8639000058174
+    },
+    {
+      "prompt": "Artificial intelligence will change the world because",
+      "temperature": 1.5,
+      "text": "Artificial intelligence will change the world because what is a \"who that can not do\u201d \ud83d\ude42\nI\u2019m so happy with it:\n- \u2191 Wales New Mexico\nPet, Beshell Emergency Information. The Nets in H",
+      "tokens_generated": 50,
+      "latency_ms": 158.3402999676764
+    },
+    {
+      "prompt": "Once upon a time",
+      "temperature": 0.2,
+      "text": "Once upon a time, the end of the end of the day.\nThe second half was a few days after the day of the day, and the day was in the morning. The rest of the day was a little bit of the day.\nThe time I",
+      "tokens_generated": 50,
+      "latency_ms": 161.83850000379607
+    },
+    {
+      "prompt": "Once upon a time",
+      "temperature": 0.8,
+      "text": "Once upon a time we have started to work on the first time I had to take a few minutes.\nI heard about my daughter who was in mind that the age, and I looked at me. Then I would want to share with my family\u2019s school or",
+      "tokens_generated": 50,
+      "latency_ms": 153.65920000476763
+    },
+    {
+      "prompt": "Once upon a time",
+      "temperature": 1.5,
+      "text": "Once upon a time. The plan was designed to meet your next night. Now, the first thing happens, he had done this week. Well, I\u2019m gonna go down with one week, he went the other day ahead on Monday on the end of 10",
+      "tokens_generated": 50,
+      "latency_ms": 159.33569998014718
+    }
+  ],
+  "verdict": "train/val gap is small - not clearly overfitting yet"
+}
