@@ -1,0 +1,756 @@
+<!-- <!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Trainer AI</title>
+<style>
+  :root {
+    --bg: #0b0d12;
+    --panel: #12151d;
+    --border: #232838;
+    --text: #e8eaf0;
+    --muted: #8a90a3;
+    --accent: #6c8cff;
+    --accent-2: #9b6cff;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: -apple-system, "Segoe UI", Inter, Roboto, sans-serif;
+    background: radial-gradient(1200px 600px at 20% -10%, #1a1f2e 0%, var(--bg) 60%);
+    color: var(--text);
+    min-height: 100vh;
+    padding: 32px 16px 64px;
+  }
+  .wrap { max-width: 720px; margin: 0 auto; }
+  header { margin-bottom: 28px; }
+  header h1 {
+    font-size: 1.6rem;
+    margin: 0 0 6px;
+    background: linear-gradient(90deg, var(--accent), var(--accent-2));
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+  header p { margin: 0; color: var(--muted); font-size: 0.92rem; line-height: 1.5; }
+
+  .card {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 20px;
+    margin-bottom: 16px;
+  }
+
+  textarea {
+    width: 100%;
+    min-height: 80px;
+    resize: vertical;
+    background: #0d1017;
+    color: var(--text);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 12px;
+    font-size: 0.95rem;
+    font-family: inherit;
+  }
+  textarea:focus, input:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
+
+  .chips { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
+  .chip {
+    background: #171b26;
+    border: 1px solid var(--border);
+    color: var(--muted);
+    border-radius: 999px;
+    padding: 6px 12px;
+    font-size: 0.8rem;
+    cursor: pointer;
+  }
+  .chip:hover { color: var(--text); border-color: var(--accent); }
+
+  .controls { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 16px; }
+  .control label {
+    display: flex; justify-content: space-between;
+    font-size: 0.8rem; color: var(--muted); margin-bottom: 6px;
+  }
+  .control input[type="range"] { width: 100%; accent-color: var(--accent); }
+  .control input[type="number"] {
+    width: 100%; background: #0d1017; color: var(--text);
+    border: 1px solid var(--border); border-radius: 8px; padding: 8px;
+  }
+
+  button.generate {
+    width: 100%; margin-top: 18px; padding: 13px;
+    border: none; border-radius: 10px; font-size: 0.95rem; font-weight: 600;
+    color: white; cursor: pointer;
+    background: linear-gradient(90deg, var(--accent), var(--accent-2));
+  }
+  button.generate:disabled { opacity: 0.5; cursor: wait; }
+
+  .output {
+    white-space: pre-wrap;
+    line-height: 1.6;
+    font-size: 1rem;
+    min-height: 60px;
+  }
+  .output .prompt-part { color: var(--muted); }
+  .meta { margin-top: 12px; font-size: 0.78rem; color: var(--muted); display: flex; gap: 16px; }
+  .placeholder { color: var(--muted); font-style: italic; }
+  .error { color: #ff7a7a; font-size: 0.88rem; }
+
+  footer { text-align: center; color: var(--muted); font-size: 0.78rem; margin-top: 24px; }
+  footer code { color: var(--accent); }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>TrainerAI</h1>
+    <p>
+        A ~10M-parameter transformer, pretrained from scratch on a
+        general and fitness-focused corpus. Type a prompt and watch
+        it generate text — this is next-token prediction, running live.
+    </p>
+  </header>
+
+  <div class="card">
+    <textarea id="prompt" placeholder="Once upon a time...">Once upon a time</textarea>
+    <div class="chips">
+      <span class="chip" data-prompt="Once upon a time">Once upon a time</span>
+      <span class="chip" data-prompt="Artificial intelligence will change the world because">Artificial intelligence will change the world because</span>
+      <span class="chip" data-prompt="The little dog ran">The little dog ran</span>
+    </div>
+
+    <div class="controls">
+      <div class="control">
+        <label>Temperature <span id="tempVal">0.8</span></label>
+        <input type="range" id="temperature" min="0.1" max="1.8" step="0.1" value="0.8">
+      </div>
+      <div class="control">
+        <label>Max tokens <span id="tokVal">50</span></label>
+        <input type="range" id="maxTokens" min="10" max="150" step="10" value="50">
+      </div>
+    </div>
+
+    <button class="generate" id="go">Generate</button>
+  </div>
+
+  <div class="card">
+    <div class="output" id="output"><span class="placeholder">Output will appear here.</span></div>
+    <div class="meta" id="meta"></div>
+  </div>
+
+  <footer>
+    Served by a FastAPI backend running the actual trained PyTorch model &middot;
+    API: <code id="apiLabel">not configured</code>
+  </footer>
+</div>
+
+<script>
+  // The FastAPI backend, deployed on Railway from deployment/Dockerfile.
+  // Override it with window.OUR_LLM_API_URL (e.g. "http://127.0.0.1:8000")
+  // to point this same page at a locally-running `uvicorn deployment.app:app`.
+  
+  //   const API_URL = window.OUR_LLM_API_URL || "https://api-production-6a81.up.railway.app";
+  const API_URL = "http://127.0.0.1:8000";
+
+  document.getElementById("apiLabel").textContent = API_URL;
+
+  const promptEl = document.getElementById("prompt");
+  const tempEl = document.getElementById("temperature");
+  const tokEl = document.getElementById("maxTokens");
+  const tempVal = document.getElementById("tempVal");
+  const tokVal = document.getElementById("tokVal");
+  const goBtn = document.getElementById("go");
+  const outputEl = document.getElementById("output");
+  const metaEl = document.getElementById("meta");
+
+  tempEl.addEventListener("input", () => tempVal.textContent = tempEl.value);
+  tokEl.addEventListener("input", () => tokVal.textContent = tokEl.value);
+
+  document.querySelectorAll(".chip").forEach(chip => {
+    chip.addEventListener("click", () => {
+      promptEl.value = chip.dataset.prompt;
+    });
+  });
+
+  async function generate() {
+    const prompt = promptEl.value.trim();
+    if (!prompt) return;
+
+    goBtn.disabled = true;
+    goBtn.textContent = "Generating...";
+    metaEl.textContent = "";
+    outputEl.innerHTML = "";
+
+    try {
+      const res = await fetch(API_URL + "/generate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          prompt,
+          max_tokens: parseInt(tokEl.value, 10),
+          temperature: parseFloat(tempEl.value),
+        }),
+      });
+
+      if (!res.ok) {
+        const body = await res.text();
+        throw new Error("HTTP " + res.status + ": " + body);
+      }
+
+      const data = await res.json();
+      outputEl.textContent = data.text;
+      metaEl.textContent =
+        data.tokens_generated + " tokens generated | " +
+        Math.round(data.latency_ms) + " ms | " +
+        Math.round((data.tokens_generated / data.latency_ms) * 1000) + " tok/s";
+    } catch (err) {
+      outputEl.innerHTML = '<span class="error">Request failed: ' +
+        err.message + '. Is the API awake and CORS-enabled?</span>';
+    } finally {
+      goBtn.disabled = false;
+      goBtn.textContent = "Generate";
+    }
+  }
+
+  goBtn.addEventListener("click", generate);
+</script>
+</body>
+</html> -->
+
+
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>TrainerAI</title>
+<style>
+  :root {
+    --bg: #080a0f;
+    --panel: rgba(18, 21, 30, 0.78);
+    --panel-strong: #11141d;
+    --border: rgba(255,255,255,.08);
+    --border-hover: rgba(126,145,255,.35);
+    --text: #f1f3f8;
+    --muted: #8e95a8;
+    --accent: #7187ff;
+    --accent-2: #a66cff;
+    --success: #62d9a2;
+    --danger: #ff7777;
+    --shadow: 0 24px 70px rgba(0,0,0,.35);
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    min-height: 100vh;
+    color: var(--text);
+    font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background:
+      radial-gradient(900px 500px at 15% -5%, rgba(91,111,255,.18), transparent 65%),
+      radial-gradient(800px 500px at 90% 10%, rgba(166,108,255,.13), transparent 65%),
+      var(--bg);
+    padding: 42px 18px 70px;
+  }
+
+  body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    background-image: linear-gradient(rgba(255,255,255,.018) 1px, transparent 1px),
+                      linear-gradient(90deg, rgba(255,255,255,.018) 1px, transparent 1px);
+    background-size: 42px 42px;
+    mask-image: linear-gradient(to bottom, black, transparent 85%);
+  }
+
+  .wrap {
+    width: min(820px, 100%);
+    margin: 0 auto;
+    position: relative;
+  }
+
+  header {
+    text-align: center;
+    margin-bottom: 30px;
+  }
+
+  .brand {
+    display: inline-flex;
+    align-items: center;
+    gap: 9px;
+    padding: 7px 12px;
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    background: rgba(255,255,255,.035);
+    color: #c9cfff;
+    font-size: .78rem;
+    font-weight: 600;
+    letter-spacing: .04em;
+    margin-bottom: 16px;
+  }
+
+  .brand-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--success);
+    box-shadow: 0 0 12px rgba(98,217,162,.8);
+  }
+
+  h1 {
+    margin: 0;
+    font-size: clamp(2rem, 6vw, 3.15rem);
+    line-height: 1;
+    letter-spacing: -.055em;
+    background: linear-gradient(110deg, #f4f5ff 15%, #91a2ff 52%, #b17cff 90%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+
+  header p {
+    max-width: 610px;
+    margin: 15px auto 0;
+    color: var(--muted);
+    font-size: .94rem;
+    line-height: 1.65;
+  }
+
+  .card {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 22px;
+    margin-bottom: 16px;
+    box-shadow: var(--shadow);
+    backdrop-filter: blur(18px);
+  }
+
+  .card-title {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 13px;
+  }
+
+  .card-title strong {
+    font-size: .88rem;
+  }
+
+  .hint {
+    color: var(--muted);
+    font-size: .74rem;
+  }
+
+  textarea {
+    display: block;
+    width: 100%;
+    min-height: 125px;
+    resize: vertical;
+    background: rgba(5,7,12,.72);
+    color: var(--text);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 15px;
+    font: inherit;
+    font-size: .95rem;
+    line-height: 1.55;
+    transition: .2s;
+  }
+
+  textarea::placeholder { color: #62697b; }
+
+  textarea:focus {
+    outline: none;
+    border-color: var(--border-hover);
+    box-shadow: 0 0 0 3px rgba(113,135,255,.08);
+  }
+
+  .chips {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-top: 11px;
+  }
+
+  .chip {
+    border: 1px solid var(--border);
+    background: rgba(255,255,255,.035);
+    color: var(--muted);
+    border-radius: 999px;
+    padding: 7px 11px;
+    font: inherit;
+    font-size: .76rem;
+    cursor: pointer;
+    transition: .18s;
+  }
+
+  .chip:hover {
+    color: var(--text);
+    border-color: var(--border-hover);
+    background: rgba(113,135,255,.08);
+    transform: translateY(-1px);
+  }
+
+  .controls {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+    margin-top: 19px;
+  }
+
+  .control {
+    padding: 14px;
+    border: 1px solid var(--border);
+    border-radius: 13px;
+    background: rgba(255,255,255,.025);
+  }
+
+  .control label {
+    display: flex;
+    justify-content: space-between;
+    color: var(--muted);
+    font-size: .78rem;
+    margin-bottom: 10px;
+  }
+
+  .value {
+    color: #dfe3ff;
+    font-weight: 600;
+  }
+
+  input[type="range"] {
+    width: 100%;
+    height: 4px;
+    appearance: none;
+    border-radius: 99px;
+    background: #292e3d;
+    accent-color: var(--accent);
+    cursor: pointer;
+  }
+
+  input[type="range"]::-webkit-slider-thumb {
+    appearance: none;
+    width: 15px;
+    height: 15px;
+    border-radius: 50%;
+    background: #9baaff;
+    border: 2px solid #151827;
+    box-shadow: 0 0 0 1px rgba(155,170,255,.5);
+  }
+
+  button.generate {
+    width: 100%;
+    margin-top: 16px;
+    padding: 14px 18px;
+    border: 1px solid rgba(255,255,255,.1);
+    border-radius: 13px;
+    color: white;
+    font: inherit;
+    font-size: .9rem;
+    font-weight: 700;
+    cursor: pointer;
+    background: linear-gradient(110deg, var(--accent), var(--accent-2));
+    box-shadow: 0 10px 30px rgba(113,135,255,.2);
+    transition: .2s;
+  }
+
+  button.generate:hover:not(:disabled) {
+    transform: translateY(-1px);
+    box-shadow: 0 14px 36px rgba(113,135,255,.28);
+  }
+
+  button.generate:disabled {
+    opacity: .55;
+    cursor: wait;
+  }
+
+  .output-card {
+    min-height: 220px;
+  }
+
+  .output {
+    min-height: 130px;
+    padding: 17px;
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    background: rgba(5,7,12,.55);
+    white-space: pre-wrap;
+    line-height: 1.7;
+    font-size: .95rem;
+  }
+
+  .placeholder {
+    color: #5f6678;
+    font-style: italic;
+  }
+
+  .error {
+    color: var(--danger);
+    line-height: 1.5;
+  }
+
+  .meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 12px;
+  }
+
+  .stat {
+    padding: 6px 9px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--muted);
+    font-size: .72rem;
+    background: rgba(255,255,255,.025);
+  }
+
+  .status {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-top: 15px;
+    color: var(--muted);
+    font-size: .73rem;
+  }
+
+  .api {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    min-width: 0;
+  }
+
+  .status-dot {
+    width: 7px;
+    height: 7px;
+    flex: 0 0 auto;
+    border-radius: 50%;
+    background: var(--success);
+    box-shadow: 0 0 10px rgba(98,217,162,.65);
+  }
+
+  #apiLabel {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  footer {
+    text-align: center;
+    color: #5f6678;
+    font-size: .72rem;
+    margin-top: 24px;
+  }
+
+  @media (max-width: 620px) {
+    body { padding: 25px 12px 45px; }
+    .card { padding: 15px; border-radius: 16px; }
+    .controls { grid-template-columns: 1fr; }
+    textarea { min-height: 110px; }
+    .status { align-items: flex-start; flex-direction: column; }
+  }
+</style>
+</head>
+
+<body>
+<div class="wrap">
+
+  <header>
+    <div class="brand">
+      <span class="brand-dot"></span>
+      TRAINERAI · LLM MODEL
+    </div>
+
+    <h1>TrainerAI</h1>
+
+    <p>
+      A ~10M-parameter transformer pretrained from scratch on a
+      general and fitness-focused corpus. Generate text directly
+      from your own PyTorch model.
+    </p>
+  </header>
+
+  <div class="card">
+    <div class="card-title">
+      <strong>Prompt</strong>
+      <span class="hint">Next-token generation</span>
+    </div>
+
+    <textarea id="prompt"
+      placeholder="Ask TrainerAI something...">How can I bulk without gaining too much fat?</textarea>
+
+    <div class="chips">
+      <button class="chip" data-prompt="How can I bulk without gaining too much fat?">
+        Lean bulk
+      </button>
+      <button class="chip" data-prompt="What is progressive overload?">
+        Progressive overload
+      </button>
+      <button class="chip" data-prompt="What should I eat after a workout?">
+        Post-workout nutrition
+      </button>
+    </div>
+
+    <div class="controls">
+      <div class="control">
+        <label>
+          Temperature
+          <span class="value" id="tempVal">0.8</span>
+        </label>
+        <input type="range" id="temperature"
+          min="0.1" max="1.8" step="0.1" value="0.8">
+      </div>
+
+      <div class="control">
+        <label>
+          Max tokens
+          <span class="value" id="tokVal">50</span>
+        </label>
+        <input type="range" id="maxTokens"
+          min="10" max="150" step="10" value="50">
+      </div>
+    </div>
+
+    <button class="generate" id="go">Generate response</button>
+
+    <div class="status">
+      <div class="api">
+        <span class="status-dot"></span>
+        <span>Local API</span>
+        <code id="apiLabel">not configured</code>
+      </div>
+      <span>PyTorch · FastAPI</span>
+    </div>
+  </div>
+
+  <div class="card output-card">
+    <div class="card-title">
+      <strong>Generation</strong>
+      <span class="hint" id="generationState">Ready</span>
+    </div>
+
+    <div class="output" id="output">
+      <span class="placeholder">Your model output will appear here.</span>
+    </div>
+
+    <div class="meta" id="meta"></div>
+  </div>
+
+  <footer>
+    TrainerAI · Our LLM · Running locally on your machine
+  </footer>
+
+</div>
+
+<script>
+  const API_URL = "http://127.0.0.1:8000";
+
+  document.getElementById("apiLabel").textContent = API_URL;
+
+  const promptEl = document.getElementById("prompt");
+  const tempEl = document.getElementById("temperature");
+  const tokEl = document.getElementById("maxTokens");
+  const tempVal = document.getElementById("tempVal");
+  const tokVal = document.getElementById("tokVal");
+  const goBtn = document.getElementById("go");
+  const outputEl = document.getElementById("output");
+  const metaEl = document.getElementById("meta");
+  const generationState = document.getElementById("generationState");
+
+  tempEl.addEventListener("input", () => {
+    tempVal.textContent = tempEl.value;
+  });
+
+  tokEl.addEventListener("input", () => {
+    tokVal.textContent = tokEl.value;
+  });
+
+  document.querySelectorAll(".chip").forEach(chip => {
+    chip.addEventListener("click", () => {
+      promptEl.value = chip.dataset.prompt;
+      promptEl.focus();
+    });
+  });
+
+  async function generate() {
+    const prompt = promptEl.value.trim();
+    if (!prompt) return;
+
+    goBtn.disabled = true;
+    goBtn.textContent = "Generating...";
+    generationState.textContent = "Generating";
+    metaEl.innerHTML = "";
+    outputEl.innerHTML = '<span class="placeholder">TrainerAI is generating...</span>';
+
+    const started = performance.now();
+
+    try {
+      const res = await fetch(API_URL + "/generate", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          prompt,
+          max_tokens: parseInt(tokEl.value, 10),
+          temperature: parseFloat(tempEl.value)
+        })
+      });
+
+      if (!res.ok) {
+        const body = await res.text();
+        throw new Error("HTTP " + res.status + ": " + body);
+      }
+
+      const data = await res.json();
+
+      outputEl.textContent = data.text;
+
+      const clientLatency = Math.round(performance.now() - started);
+      const latency = Math.round(data.latency_ms);
+      const tokPerSec = latency > 0
+        ? Math.round((data.tokens_generated / latency) * 1000)
+        : 0;
+
+      metaEl.innerHTML = `
+        <span class="stat">${data.tokens_generated} tokens</span>
+        <span class="stat">${latency} ms model latency</span>
+        <span class="stat">${tokPerSec} tok/s</span>
+        <span class="stat">${clientLatency} ms total</span>
+      `;
+
+      generationState.textContent = "Complete";
+
+    } catch (err) {
+      outputEl.innerHTML =
+        '<span class="error">Request failed: ' +
+        err.message +
+        '. Make sure FastAPI is running on ' +
+        API_URL +
+        '.</span>';
+
+      generationState.textContent = "Error";
+    } finally {
+      goBtn.disabled = false;
+      goBtn.textContent = "Generate response";
+    }
+  }
+
+  goBtn.addEventListener("click", generate);
+
+  promptEl.addEventListener("keydown", event => {
+    if ((event.ctrlKey || event.metaKey) && event.key === "Enter") {
+      generate();
+    }
+  });
+</script>
+</body>
+</html>

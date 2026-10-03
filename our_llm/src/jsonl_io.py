@@ -13,7 +13,7 @@ def read_jsonl(path, limit=None):
 
 def write_jsonl(path, documents):
     path.parent.mkdir(parents=True, exist_ok=True)
-
+    
     with open(path, "w", encoding="utf-8") as f:
         for doc in documents:
             f.write(json.dumps(doc, ensure_ascii=False) + "\n")

@@ -50,14 +50,6 @@ class ModelConfig:
         return asdict(self)
 
 
-# def load_config(path):
-#     with open(path, "r", encoding="utf-8") as f:
-#         values = yaml.safe_load(f)
-
-#     config = ModelConfig(**values)
-#     config.check()
-#     return config
-
 def load_config(path):
     with open(path, "r", encoding="utf-8") as f:
         values = yaml.safe_load(f)
