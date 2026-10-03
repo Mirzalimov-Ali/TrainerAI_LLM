@@ -10,9 +10,9 @@ data/
 *.parquet
 
 # 2. Ignore Large Model Weights & Checkpoints (PyTorch output files)
-checkpoints/
-models/
-*.pt
+# checkpoints/
+# models/
+# *.pt
 *.pth
 *.bin
 *.ckpt
