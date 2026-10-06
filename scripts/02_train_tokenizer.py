@@ -6,12 +6,12 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from src.jsonl_io import read_jsonl
 from src.tokenizer import Tokenizer
 
-INPUT = Path("data/final/tinystories.jsonl")
+INPUT = Path("data/final/mixture_final.jsonl")
 OUTPUT = Path("tokenizer/tokenizer.json")
 
 VOCAB_SIZE = 8000
 
-MAX_DOCUMENTS = 200000
+MAX_DOCUMENTS = 400000
 
 documents = read_jsonl(INPUT, limit=MAX_DOCUMENTS)
 texts = [doc["text"] for doc in documents]
@@ -21,7 +21,7 @@ tokenizer = Tokenizer()
 tokenizer.train(texts, vocab_size=VOCAB_SIZE)
 tokenizer.save(OUTPUT)
 
-sample = "Once upon a time there was a little girl."
+sample = "Do hummer curl for brachialis"
 ids = tokenizer.encode(sample)
 back = tokenizer.decode(ids)
 

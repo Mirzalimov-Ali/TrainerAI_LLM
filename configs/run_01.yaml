@@ -1,4 +1,4 @@
-vocab_size: 8000     
+vocab_size: 8000
 block_size: 256      
 n_embd: 384          
 n_layer: 6           
