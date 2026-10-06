@@ -7,9 +7,12 @@ from pydantic import BaseModel, Field
 
 from inference.engine import InferenceEngine
 
+from fastapi.responses import FileResponse
+
 CONFIG_PATH = Path(os.environ.get("CONFIG_PATH", "configs/run_01.yaml"))
 CHECKPOINT_PATH = Path(os.environ.get("CHECKPOINT_PATH", "checkpoints/best.pt"))
 TOKENIZER_PATH = Path(os.environ.get("TOKENIZER_PATH", "tokenizer/tokenizer.json"))
+BASE_DIR = Path(__file__).resolve().parent.parent
 
 app = FastAPI(title="Our LLM", description="A small pretrained language model.")
 
@@ -68,3 +71,8 @@ def health():
         "model": "our-llm",
         "device": str(engine.device) if engine is not None else None,
     }
+
+
+@app.get("/")
+def root():
+    return FileResponse(BASE_DIR / "ui" / "index.html")
